@@ -1,0 +1,45 @@
+# name of your action
+name: CAST Highlight Scan
+
+branding:
+  icon: "code"
+  color: "yellow"
+
+description: Run CAST Highlight scans on your code to get Software Intelligence insights (vulnerabilities, cloud readiness, etc.)
+
+# action triggers, here every two weeks (days 5 and 15 of the month) at 6am
+on:
+  
+  workflow_dispatch:
+    branches: [ main ]
+
+  schedule:
+    - cron: 0,5,10,15,20,25,30,35,40,45,50,55  * * * *
+
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    # use the prod environment, where the secret CAST_HIGHLIGHT_API_TOKEN is defined
+    environment: prod
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: get company and application ids
+        run: |
+          cat .github/workflows/hl.env >> $GITHUB_ENV
+      - name: scan project source code 
+        run: |
+          docker run --rm -v $(pwd):/s -v /tmp:/w  casthighlight/hl-agent-cli \
+                                                   sourceDir /s \
+                                                   workingDir /w \
+                                                   tokenAuth ${{ secrets.CAST_HIGHLIGHT_API_TOKEN}} \
+                                                   companyId ${{ 18601 }} \
+                                                   applicationId ${{ 122700 }} \
+                                                   serverUrl ${{ https://rpa.casthighlight.com }} \
+                                                   --ignoreDirectories ${{ env.ignoreDirectories }}
+  # - name: CAST Highlight Scan
+    # You may pin to the exact commit or the version.
+    # uses: MichaelMULLER/highlight-scan-github-action@e847701e3d51663665a273cdc02e0e1e61ee4fa6
+    uses: MichaelMULLER/highlight-scan-github-action@0.0.1
